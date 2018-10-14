@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  path.domain {
+    stroke: none;
+  }
+  .tick line {
+    stroke: #ccc;
+  }
+  .tick text {
+    fill: #666;
+  }
+  svg.title text {
+    font-size: 9px;
+  }
+  .legend {
+    font-size: 12px;
+  }
+  .legend-title {
+    font-size: 16px;
+  }
+  .note {
+    color: #666;
+    font-size: .7rem;
+  }
+</style>
+<svg width="600" height="400"></svg>
+<div class="note">
+  ※ 社会増減率 = (転入者数 − 転出者数) ÷ 前年人口 × 100
+</div>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="GridMap.js"></script>
+<script>
+  const svg = d3.select('svg'),
+    width = +svg.attr('width'),
+    height = +svg.attr('height');
+
+  const changeDomain = [
+    -1.0, -0.75, -0.5, -0.25,
+    0.0, 0.25, 0.5, 0.75, 1.0
+  ];
+  const changeDomainForLegend = changeDomain.slice(2, 8);
+  const changeDomainForTick = changeDomain.slice(2, 9);
+
+  const color = d3.scaleThreshold()
+    .domain(changeDomain)
+    .range(d3.schemeRdBu[10]);
+  
+  const titleColor = d3.scaleThreshold()
+    .domain(changeDomain)
+    .range([
+      '#333', '#333', '#333', '#333',
+      '#333', '#333', '#333', '#fff', '#fff'
+    ]);
+
+  const baseWidthForJpGridMap = 193.5;
+  const baseHeightForJpGridMap = 113.13;
+  const x = d3.scaleLinear()
+    .domain([0, baseWidthForJpGridMap])
+    .range([0, width]);
+  const y = d3.scaleLinear()
+    .domain([0, baseHeightForJpGridMap])
+    .range([0, width*baseHeightForJpGridMap/baseWidthForJpGridMap]);
+
+  const legend = svg.append('g');
+  const legendWidth = 10;
+  const legendHeight = 150;
+  const legendThresholdHeight = legendHeight / changeDomainForLegend.length;
+  const legendMergin = 30;
+
+  const legendScale = d3.scaleLinear()
+    .domain(d3.extent(changeDomainForTick))
+    .range([0, legendHeight]);
+  const legendAxis = d3.axisRight(legendScale)
+    .tickFormat(d3.format('.0%'))
+    .tickValues([-0.25, 0.0, 0.25, 0.50, 0.75]);
+
+  legend.append('g')
+    .attr('transform', `translate(${legendWidth},${legendMergin})`)
+    .call(legendAxis);
+
+  legend.append('g')
+    .attr('transform', `translate(0,${legendMergin})`)
+    .selectAll('rect')
+    .data(changeDomainForLegend)
+    .enter().append('rect')
+      .attr('width', legendWidth)
+      .attr('height', legendThresholdHeight)
+      .attr('x', 0)
+      .attr('y', (d, i) => legendThresholdHeight * i)
+      .attr('fill', (d) => color(d));
+
+  legend.append('text')
+    .attr('x', 0)
+    .attr('y', 15)
+    .attr('class', 'legend-title')
+    .text('社会増減率 (2017)')
+
+  const merge = (array1, array2) => {
+    return array1.map((value, index) => {
+      return Object.assign(value, array2[index]);
+    });
+  };
+
+  Promise.all([
+    d3.json('data-go-jp-map.json'),
+    d3.csv('prefecture-names.csv'),
+    d3.csv('population-change-2017.csv', (d) => {
+      return {
+        id: d.id,
+        change: parseFloat(d.change),
+      }
+    }),
+  ]).then(([prefectures, prefectureNames, populationChanges]) => {
+    // assuming all the data are sorted by prefecture id
+    const data = merge(merge(prefectures, prefectureNames), populationChanges);
+
+    (new GridMap(svg.append('g'), x, y, data, 'change'))
+      .setColor(color)
+      .setTitleColor(titleColor)
+      .setTitleKey('name_ja')
+      .renderMap()
+      .renderTitles();
+  });
+</script>
