@@ -9,6 +9,9 @@
         margin: 5%;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       }
+      a {
+        text-decoration: none;
+      }
       .contents {
         width: 800px;
         margin: auto;
@@ -39,9 +42,14 @@
   </head>
   <body>
     <div class="contents">
+      <h1>Grid-ish Map Demo</h1>
       <svg width="800" height="500"></svg>
       <div class="note">
-        ※ 社会増減率 = (転入者数 − 転出者数) ÷ 前年人口 × 100
+        <ul>
+          <li>社会増減率 = (転入者数 − 転出者数) ÷ 前年人口 × 100</li>
+          <li>データ: <a href="http://www.soumu.go.jp/menu_news/s-news/01gyosei02_02000177.html">住民基本台帳に基づく人口、人口動態及び世帯数（平成30年1月1日現在）</a></li>
+          <li><a href="https://github.com/nobuf/grid-map">ソースコード</a></li>
+        </ul>
       </div>
     </div>
     <script src="https://d3js.org/d3.v5.min.js"></script>
